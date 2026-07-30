@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول - Angel &amp; Gold</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=Aref+Ruqaa:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gold:#c9a548; --gold-light:#e8cf8a; --gold-dim:#8a742f;
+    --black:#000000; --charcoal:#0a0a0a; --text-soft-dark:#b9b6ab;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:'Cairo',sans-serif;background:var(--black);color:var(--gold-light);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .box{
+    width:100%;max-width:360px;background:var(--charcoal);border:1px solid rgba(201,165,72,.3);
+    border-radius:16px;padding:28px 24px;text-align:center;
+  }
+  .box h1{font-family:'Aref Ruqaa',serif;font-size:24px;color:var(--gold-light);margin-bottom:6px;}
+  .box p{font-size:13px;color:var(--text-soft-dark);margin-bottom:22px;}
+  input[type=password]{
+    width:100%;padding:12px 14px;border-radius:10px;border:1px solid #3a3626;
+    background:#0d0d0a;color:#fdf6e3;font-family:'Cairo',sans-serif;font-size:14px;margin-bottom:14px;
+  }
+  input:focus{outline:1px solid var(--gold);}
+  button{
+    width:100%;padding:12px;border:none;border-radius:10px;
+    background:linear-gradient(180deg,var(--gold-light),var(--gold));color:#1a1405;
+    font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;
+  }
+  button:disabled{opacity:.6;cursor:default;}
+  .error{color:#e08a86;font-size:12.5px;margin-top:12px;display:none;}
+  .error.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h1>لوحة التحكم</h1>
+  <p>اكتبي كلمة السر عشان تدخلي</p>
+  <form id="loginForm">
+    <input type="password" id="password" placeholder="كلمة السر" autofocus required>
+    <button type="submit" id="submitBtn">دخول</button>
+  </form>
+  <div class="error" id="errorMsg">كلمة السر غلط، جربي تاني</div>
+</div>
+
+<script>
+  const form = document.getElementById('loginForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const errorMsg = document.getElementById('errorMsg');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.classList.remove('show');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'بنتأكد...';
+
+    const password = document.getElementById('password').value;
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = params.get('next') || '/admin.html';
+      } else {
+        errorMsg.classList.add('show');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'دخول';
+      }
+    } catch (err) {
+      errorMsg.textContent = 'في مشكلة في الاتصال، جربي تاني';
+      errorMsg.classList.add('show');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'دخول';
+    }
+  });
+</script>
+
+</body>
+</html>
