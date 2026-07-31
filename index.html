@@ -76,7 +76,7 @@
   .designs-section{padding:70px 24px;background:var(--ivory);}
   .design-grid{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
   .d-card{background:var(--ivory);border:1px solid rgba(201,165,72,.3);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
-  .d-thumb{height:150px;}
+  .d-thumb{height:150px;background-color:#0f0f0f;}
   .d-card b{font-size:15px;padding:14px 16px 4px;display:block;}
   .d-card .desc{font-size:12.5px;color:var(--text-soft);padding:0 16px;margin-bottom:8px;}
   .d-card .weight{font-size:12px;color:var(--gold-dim);font-weight:600;padding:0 16px;margin-bottom:14px;}
@@ -234,6 +234,9 @@
   <div class="section-sub">دوس "عايز التصميم ده" وهتنقل على طول لجزء الطلب بنفس التفاصيل</div>
   <div class="design-grid" id="designGrid"></div>
   <div class="designs-note">الصور دي مكانها بس حاليًا لحد ما توصل الصور الحقيقية للتصميمات</div>
+  <div style="text-align:center;margin-top:22px;">
+    <a class="btn btn-outline" href="https://web.facebook.com/profile.php?id=61570838792613" target="_blank" rel="noopener">شوفي باقي تصميماتنا على فيسبوك</a>
+  </div>
 </section>
 
 <section class="order-section" id="order">
@@ -478,7 +481,7 @@
       const card = document.createElement('div');
       card.className='d-card';
       const thumb = d.image
-        ? `<div class="d-thumb" style="background-image:url('${d.image}');background-size:cover;background-position:center;"></div>`
+        ? `<div class="d-thumb" style="background-image:url('${d.image}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`
         : `<div class="d-thumb" style="background:linear-gradient(135deg,${d.color||'#e8cf8a,#8a742f'});"></div>`;
       card.innerHTML = `
         ${thumb}
