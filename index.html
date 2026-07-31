@@ -470,6 +470,10 @@
   const grid = document.getElementById('designGrid');
   function renderGallery(){
     grid.innerHTML = '';
+    if(!designs.length){
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-soft-dark);padding:24px 0;">هنضيف تشكيلة التصميمات قريبًا هنا</div>';
+      return;
+    }
     designs.forEach(d=>{
       const card = document.createElement('div');
       card.className='d-card';
@@ -503,7 +507,7 @@
 
     try{
       const rows = await supaGet('/designs?select=*&order=created_at.asc');
-      if(rows && rows.length){ designs = rows; renderGallery(); }
+      if(rows){ designs = rows; renderGallery(); }
     }catch(e){ console.error('تعذر تحميل التصميمات من Supabase، هتفضل العينة الاحتياطية', e); }
   }
   initData();
