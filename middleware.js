@@ -7,7 +7,9 @@ export const config = {
 };
 
 export default async function middleware(request) {
-  const cookie = request.cookies.get('admin_session')?.value;
+  const cookieHeader = request.headers.get('cookie') || '';
+  const match = cookieHeader.match(/(?:^|;\s*)admin_session=([^;]+)/);
+  const cookie = match ? decodeURIComponent(match[1]) : null;
   const expected = await hashPassword(process.env.ADMIN_PASSWORD || '');
 
   if (cookie && expected && timingSafeEqual(cookie, expected)) {
