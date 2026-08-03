@@ -273,9 +273,11 @@
         <label>اسم النقش على القطعة <span style="color:var(--text-soft);font-weight:400;">(اختياري)</span></label>
         <input type="text" id="engraveName" placeholder="مثلاً: اسم شخص عزيز عليك">
 
-        <label>الوزن (بالجرام) <span style="color:var(--gold-dim);font-weight:400;">(إجباري)</span></label>
-        <input type="number" id="weight" min="0.5" max="30" step="0.5" value="5">
-        <div class="designs-note" style="margin-top:6px;">كل قطعنا بتتصنع عيار 18، ومن نص جرام لحد 30 جرام حسب الميزانية</div>
+        <div id="mainWeightBlock" style="display:none;">
+          <label>وزن الكوليه/التصميم اللي اخترتيه (بالجرام) <span style="color:var(--text-soft);font-weight:400;">(اختياري - بيتحدد تلقائي وقت الاختيار، تقدري تعدليه)</span></label>
+          <input type="number" id="weight" min="0.5" max="30" step="0.5" value="0">
+          <div class="designs-note" style="margin-top:6px;">كل قطعنا بتتصنع عيار 18، ومن نص جرام لحد 30 جرام حسب الميزانية</div>
+        </div>
 
         <label class="pay-opt" id="chainToggle" style="margin-top:16px;">
           <input type="checkbox" id="wantChain" style="width:auto;">
@@ -575,8 +577,11 @@
   }
   initData();
 
+  let designSelected = false;
   function selectDesign(name, weight){
+    designSelected = true;
     document.getElementById('selectedDesignName').textContent = name;
+    document.getElementById('mainWeightBlock').style.display = 'block';
     document.getElementById('weight').value = weight;
     calcOrder();
     document.getElementById('order').scrollIntoView({behavior:'smooth', block:'start'});
@@ -587,6 +592,7 @@
   function selectChain(name, minWeight){
     selectedChainName = name;
     selectedChainMinWeight = Number(minWeight) || 0;
+    if(!designSelected){ weightInput.value = 0; }
     wantChain.checked = true;
     chainWeightBlock.style.display = 'block';
     chainLine.style.display = 'flex';
@@ -692,6 +698,11 @@
       alert('لازم تكتبي اسمك ورقم موبايلك قبل تأكيد الطلب');
       return;
     }
+    if(!designSelected && !wantChain.checked){
+      alert('لازم تختاري كوليه (تصميم) أو سلسلة على الأقل من فوق قبل ما تأكدي الطلب');
+      document.getElementById('designs').scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
     if(wantChain.checked && selectedChainMinWeight && Number(chainWeightInput.value) < selectedChainMinWeight){
       alert('السلسلة اللي اخترتيها (' + selectedChainName + ') الحد الأدنى لوزنها ' + selectedChainMinWeight + ' جرام، لازم تزودي الوزن قبل ما تأكدي الطلب');
       chainWeightInput.focus();
@@ -713,7 +724,7 @@
       number: orderNumber,
       order_date: new Date().toLocaleString('ar-EG'),
       name, phone,
-      design: document.getElementById('selectedDesignName').textContent,
+      design: designSelected ? document.getElementById('selectedDesignName').textContent : 'من غير كوليه/تصميم - سلسلة بس',
       engrave: document.getElementById('engraveName').value.trim(),
       weight: weightInput.value,
       chain: wantChain.checked ? chainWeightInput.value : null,
