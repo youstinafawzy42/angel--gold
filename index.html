@@ -290,9 +290,8 @@
           <div class="calc-line"><span>سعر جرام عيار 18 النهارده</span><b id="pricePerGram">--</b></div>
           <div class="calc-line"><span>الوزن المطلوب</span><b id="weightShow">--</b></div>
           <div class="calc-line" id="chainLine" style="display:none;"><span>وزن السلسلة الإضافية</span><b id="chainWeightShow">--</b></div>
-          <div class="calc-line"><span>سعر الذهب (الجرام × الوزن)</span><b id="goldCost">--</b></div>
-          <div class="calc-line"><span>مصنعية</span><b id="workCost">--</b></div>
           <div class="calc-total"><span>الإجمالي</span><b id="totalCost">--</b></div>
+          <div style="margin-top:10px;font-size:11.5px;color:var(--text-soft-dark);line-height:1.6;">مصنعية الشغل الإيطالي مميزة، ومصنعية المصري بتبدأ من 400 جنيه — الإجمالي فوق شامل كل حاجة عدا المصنعية</div>
         </div>
 
         <label>ملاحظات <span style="color:var(--text-soft);font-weight:400;">(اختياري)</span></label>
@@ -447,7 +446,7 @@
     const price = KARAT_PRICES[karat];
     const goldCost = price * weight;
     const workCost = WORK_PER_GRAM * weight;
-    return { price, goldCost, workCost, total: goldCost + workCost };
+    return { price, goldCost, workCost, total: goldCost }; // الإجمالي المعروض سعر الذهب بس، من غير المصنعية
   }
 
   /* ===== تيكر السعر اللحظي في الأعلى - عرض فقط ===== */
@@ -629,8 +628,6 @@
     document.getElementById('pricePerGram').textContent = fmt(r.price);
     document.getElementById('weightShow').textContent = mainWeight + ' جرام';
     document.getElementById('chainWeightShow').textContent = chainW + ' جرام';
-    document.getElementById('goldCost').textContent = fmt(r.goldCost);
-    document.getElementById('workCost').textContent = fmt(r.workCost);
     document.getElementById('totalCost').textContent = fmt(r.total);
   }
   weightInput.addEventListener('input', calcOrder);
@@ -797,7 +794,7 @@
       const r = calcTotal(PRODUCT_KARAT, weight);
       const answer = document.createElement('div');
       answer.className='chat-bubble';
-      answer.innerHTML = `قطعة ${weight} جرام عيار 18 تكلفتها التقريبية <b>${fmt(r.total)}</b> (سعر الذهب + المصنعية). لو حددت نفس الوزن ده في جزء "اطلب تصميمك" تحت، هتلاقي نفس الرقم بالظبط.`;
+      answer.innerHTML = `قطعة ${weight} جرام عيار 18 تكلفتها التقريبية <b>${fmt(r.total)}</b> (سعر الذهب بس، من غير المصنعية). لو حددت نفس الوزن ده في جزء "اطلب تصميمك" تحت، هتلاقي نفس الرقم بالظبط.`;
       body.appendChild(answer);
       body.scrollTop = body.scrollHeight;
     });
