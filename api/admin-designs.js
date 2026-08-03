@@ -15,7 +15,7 @@ export default async function handler(request) {
     } catch (e) {
       return json({ ok: false, error: 'bad_request' }, 400);
     }
-    const { id, name, desc, weight, color, image } = body || {};
+    const { id, name, desc, weight, color, image, type, min_weight } = body || {};
     if (!name || !weight) {
       return json({ ok: false, error: 'missing_fields' }, 400);
     }
@@ -27,6 +27,8 @@ export default async function handler(request) {
       weight: Number(weight),
       color: color || '#e8cf8a,#8a742f',
       image: image || null,
+      type: type === 'chain' ? 'chain' : 'design',
+      min_weight: Number(min_weight) || 0,
     };
     try {
       const res = await supabaseFetch('/designs', {

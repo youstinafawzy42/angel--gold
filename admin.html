@@ -85,12 +85,19 @@ a{color:inherit;text-decoration:none;}
 
     <div id="adminTabDesigns">    <div class="admin-card">
       <h2 id="formTitle">إضافة تصميم جديد</h2>
+      <label>النوع</label>
+      <select id="fType">
+        <option value="design">تصميم (خاتم / كوليه / دلاية...)</option>
+        <option value="chain">سلسلة</option>
+      </select>
       <label>اسم التصميم</label>
       <input type="text" id="fName" placeholder="مثلاً: خاتم كلاسيك">
       <label>الوصف</label>
       <textarea id="fDesc" placeholder="وصف قصير للتصميم"></textarea>
       <label>الوزن التقريبي (بالجرام)</label>
       <input type="number" id="fWeight" min="0.5" max="30" step="0.5" placeholder="مثلاً: 5">
+      <label id="fMinWeightLabel" style="display:none;">الحد الأدنى المسموح لوزن السلسلة دي (بالجرام)</label>
+      <input type="number" id="fMinWeight" min="0.5" max="30" step="0.5" placeholder="مثلاً: 3" style="display:none;">
       <label>صورة التصميم</label>
       <div class="admin-upload" id="uploadZone">
         <span id="uploadHint">دوسي هنا أو اسحبي الصورة</span>
@@ -156,9 +163,12 @@ a{color:inherit;text-decoration:none;}
 
   /* ===== لوحة التحكم - جوه نفس الصفحة، بتشتغل على نفس مصفوفة designs فوق ===== */
   const adminListWrap = document.getElementById('adminListWrap');
+  const fType = document.getElementById('fType');
   const fName = document.getElementById('fName');
   const fDesc = document.getElementById('fDesc');
   const fWeight = document.getElementById('fWeight');
+  const fMinWeightLabel = document.getElementById('fMinWeightLabel');
+  const fMinWeight = document.getElementById('fMinWeight');
   const fImage = document.getElementById('fImage');
   const previewImg = document.getElementById('previewImg');
   const uploadHint = document.getElementById('uploadHint');
@@ -167,6 +177,14 @@ a{color:inherit;text-decoration:none;}
   const adminToast = document.getElementById('adminToast');
   let editingId = null;
   let currentImage = null;
+
+  function toggleTypeFields(){
+    const isChain = fType.value === 'chain';
+    fMinWeightLabel.style.display = isChain ? 'block' : 'none';
+    fMinWeight.style.display = isChain ? 'block' : 'none';
+  }
+  fType.addEventListener('change', toggleTypeFields);
+  toggleTypeFields();
 
   /* ===== مفيش باسورد هنا خالص - الحماية بقت على السيرفر (middleware.js) قبل ما الصفحة دي حتى توصل للمتصفح ===== */
   loadDesignsFromSupabase();
@@ -244,7 +262,7 @@ a{color:inherit;text-decoration:none;}
           <div><b style="color:var(--gold-light);">الاسم:</b> ${o.name}</div>
           <div><b style="color:var(--gold-light);">الموبايل:</b> ${o.phone}</div>
           <div><b style="color:var(--gold-light);">التصميم:</b> ${o.design}</div>
-          <div><b style="color:var(--gold-light);">الوزن:</b> ${o.weight} جرام${o.chain ? ' + سلسلة ' + o.chain + ' جرام' : ''}</div>
+          <div><b style="color:var(--gold-light);">الوزن:</b> ${o.weight} جرام${o.chain ? ' + سلسلة ' + (o.chain_name ? o.chain_name + ' ' : '') + o.chain + ' جرام' : ''}</div>
           ${o.engrave ? `<div><b style="color:var(--gold-light);">النقش:</b> ${o.engrave}</div>` : ''}
           <div><b style="color:var(--gold-light);">الإجمالي:</b> ${o.total}</div>
           <div><b style="color:var(--gold-light);">طريقة الدفع:</b> ${o.pay}</div>
@@ -290,9 +308,12 @@ a{color:inherit;text-decoration:none;}
       const row = document.createElement('div');
       row.className = 'admin-list-item';
       const thumbStyle = d.image ? `background-image:url('${d.image}');` : `background:linear-gradient(135deg,${d.color||'#e8cf8a,#8a742f'});`;
+      const isChain = d.type === 'chain';
+      const typeBadge = isChain ? '<span style="color:var(--gold-dim);font-weight:700;">سلسلة · </span>' : '';
+      const weightLine = isChain ? `الحد الأدنى ${d.min_weight || 0} جرام` : `${d.weight} جرام تقريبًا`;
       row.innerHTML = `
         <div class="admin-thumb" style="${thumbStyle}"></div>
-        <div style="flex:1;"><b>${d.name}</b><span>${d.weight} جرام تقريبًا</span></div>
+        <div style="flex:1;"><b>${typeBadge}${d.name}</b><span>${weightLine}</span></div>
         <div class="admin-list-actions">
           <button class="admin-icon-btn" data-edit="${d.id}">تعديل</button>
           <button class="admin-icon-btn danger" data-del="${d.id}">حذف</button>
@@ -321,9 +342,12 @@ a{color:inherit;text-decoration:none;}
     const d = designs.find(x=>x.id===id);
     if(!d) return;
     editingId = id;
+    fType.value = d.type === 'chain' ? 'chain' : 'design';
+    toggleTypeFields();
     fName.value = d.name;
     fDesc.value = d.desc || d.description || '';
     fWeight.value = d.weight;
+    fMinWeight.value = d.min_weight || '';
     currentImage = d.image;
     if(d.image){ previewImg.src = d.image; previewImg.style.display='block'; uploadHint.style.display='none'; }
     else { previewImg.style.display='none'; uploadHint.style.display='block'; }
@@ -337,7 +361,8 @@ a{color:inherit;text-decoration:none;}
 
   function resetAdminForm(){
     editingId = null; currentImage = null;
-    fName.value=''; fDesc.value=''; fWeight.value=''; fImage.value='';
+    fType.value = 'design'; toggleTypeFields();
+    fName.value=''; fDesc.value=''; fWeight.value=''; fMinWeight.value=''; fImage.value='';
     previewImg.style.display='none'; uploadHint.style.display='block';
     formTitle.textContent = 'إضافة تصميم جديد';
     cancelEditBtn.style.display = 'none';
@@ -346,11 +371,14 @@ a{color:inherit;text-decoration:none;}
 
   document.getElementById('saveDesignBtn').addEventListener('click', async ()=>{
     if(!fName.value.trim() || !fWeight.value){ showAdminToast('لازم تكتبي الاسم والوزن على الأقل'); return; }
+    if(fType.value === 'chain' && !fMinWeight.value){ showAdminToast('لازم تحددي الحد الأدنى لوزن السلسلة'); return; }
     const record = {
       id: editingId || undefined,
+      type: fType.value,
       name: fName.value.trim(),
       desc: fDesc.value.trim(),
       weight: Number(fWeight.value),
+      min_weight: fType.value === 'chain' ? Number(fMinWeight.value) : 0,
       color: "#e8cf8a,#8a742f",
       image: currentImage
     };

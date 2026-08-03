@@ -239,6 +239,14 @@
   </div>
 </section>
 
+<section class="designs-section" id="chains" style="background:var(--ivory);">
+  <div class="section-label">السلاسل</div>
+  <div class="section-title">اختاري نوع السلسلة</div>
+  <div class="section-sub">كل سلسلة ليها حد أدنى للوزن، هيتظبط تلقائي وقت ما تختاريها</div>
+  <div class="design-grid" id="chainGrid"></div>
+  <div class="designs-note" id="chainsEmptyNote" style="display:none;">هنضيف أنواع السلاسل قريبًا</div>
+</section>
+
 <section class="order-section" id="order">
   <div class="section-label">اطلب تصميمك</div>
   <div class="section-title">تفاصيل الطلب</div>
@@ -252,6 +260,7 @@
         <span>التصميم اللي هيتحدد عليه الطلب</span>
       </div>
     </div>
+    <div id="selectedChainName" style="display:none;color:var(--gold-dim);font-weight:600;font-size:13px;margin:-8px 0 14px;text-align:center;"></div>
 
     <div id="orderForm">
       <div class="card">
@@ -471,13 +480,64 @@
   let designs = defaultDesigns.map((d,i)=>({...d, id:'d'+i}));
 
   const grid = document.getElementById('designGrid');
+  const chainGrid = document.getElementById('chainGrid');
+  const chainsEmptyNote = document.getElementById('chainsEmptyNote');
+
+  function pendantsOnly(){ return designs.filter(d => d.type !== 'chain'); }
+  function chainsOnly(){ return designs.filter(d => d.type === 'chain'); }
+
   function renderGallery(){
     grid.innerHTML = '';
-    if(!designs.length){
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-soft-dark);padding:24px 0;">هنضيف تشكيلة التصميمات قريبًا هنا</div>';
+    const list = pendantsOnly();
+    if(!list.length){
+      const emptyNote = document.createElement('div');
+      emptyNote.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--text-soft-dark);padding:24px 0;';
+      emptyNote.textContent = 'هنضيف تشكيلة التصميمات قريبًا هنا';
+      grid.appendChild(emptyNote);
+    } else {
+      list.forEach(d=>{
+        const card = document.createElement('div');
+        card.className='d-card';
+        const thumb = d.image
+          ? `<div class="d-thumb" style="background-image:url('${d.image}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`
+          : `<div class="d-thumb" style="background:linear-gradient(135deg,${d.color||'#e8cf8a,#8a742f'});"></div>`;
+        card.innerHTML = `
+          ${thumb}
+          <b>${d.name}</b>
+          <div class="desc">${d.desc || d.description || ''}</div>
+          <div class="weight">الوزن التقريبي: ${d.weight} جرام</div>
+          <button class="pick">عايز التصميم ده</button>
+        `;
+        card.querySelector('.pick').addEventListener('click', ()=> selectDesign(d.name, d.weight));
+        grid.appendChild(card);
+      });
+    }
+
+    // كارت ثابت آخر الجاليري: تصميم من اختيار العميل، بيحول على واتساب على طول بدل ما ينزل لفورم الطلب
+    const customCard = document.createElement('div');
+    customCard.className='d-card';
+    customCard.innerHTML = `
+      <div class="d-thumb" style="background:linear-gradient(135deg,#3a3a3a,#0f0f0f);display:flex;align-items:center;justify-content:center;font-size:32px;">✏️</div>
+      <b>تصميم من اختيارك</b>
+      <div class="desc">مش لاقية اللي في بالك؟ ابعتيلنا صورة التصميم اللي عايزاه وهنتكلم مع المدير مباشرة</div>
+      <div class="weight">&nbsp;</div>
+      <a class="pick" style="display:block;text-align:center;text-decoration:none;" target="_blank" rel="noopener"
+         href="https://wa.me/201228604347?text=${encodeURIComponent('عايزة أطلب تصميم من اختياري مش موجود عندكم في الموقع، هبعتلكم صورته دلوقتي')}">
+        كلمي المدير على واتساب
+      </a>
+    `;
+    grid.appendChild(customCard);
+  }
+
+  function renderChainGallery(){
+    chainGrid.innerHTML = '';
+    const list = chainsOnly();
+    if(!list.length){
+      chainsEmptyNote.style.display = 'block';
       return;
     }
-    designs.forEach(d=>{
+    chainsEmptyNote.style.display = 'none';
+    list.forEach(d=>{
       const card = document.createElement('div');
       card.className='d-card';
       const thumb = d.image
@@ -487,14 +547,15 @@
         ${thumb}
         <b>${d.name}</b>
         <div class="desc">${d.desc || d.description || ''}</div>
-        <div class="weight">الوزن التقريبي: ${d.weight} جرام</div>
-        <button class="pick">عايز التصميم ده</button>
+        <div class="weight">الحد الأدنى للوزن: ${d.min_weight || d.weight || 0} جرام</div>
+        <button class="pick">عايزة السلسلة دي</button>
       `;
-      card.querySelector('.pick').addEventListener('click', ()=> selectDesign(d.name, d.weight));
-      grid.appendChild(card);
+      card.querySelector('.pick').addEventListener('click', ()=> selectChain(d.name, d.min_weight || d.weight || 0));
+      chainGrid.appendChild(card);
     });
   }
   renderGallery(); // عرض فوري بالبيانات الاحتياطية لحد ما يوصل رد Supabase
+  renderChainGallery();
 
   async function initData(){
     try{
@@ -510,7 +571,7 @@
 
     try{
       const rows = await supaGet('/designs?select=*&order=created_at.asc');
-      if(rows){ designs = rows; renderGallery(); }
+      if(rows){ designs = rows; renderGallery(); renderChainGallery(); }
     }catch(e){ console.error('تعذر تحميل التصميمات من Supabase، هتفضل العينة الاحتياطية', e); }
   }
   initData();
@@ -518,6 +579,24 @@
   function selectDesign(name, weight){
     document.getElementById('selectedDesignName').textContent = name;
     document.getElementById('weight').value = weight;
+    calcOrder();
+    document.getElementById('order').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  let selectedChainName = null;
+  let selectedChainMinWeight = 0;
+  function selectChain(name, minWeight){
+    selectedChainName = name;
+    selectedChainMinWeight = Number(minWeight) || 0;
+    wantChain.checked = true;
+    chainWeightBlock.style.display = 'block';
+    chainLine.style.display = 'flex';
+    chainWeightInput.min = selectedChainMinWeight || 0.5;
+    if(Number(chainWeightInput.value) < selectedChainMinWeight){
+      chainWeightInput.value = selectedChainMinWeight;
+    }
+    document.getElementById('selectedChainName').textContent = 'السلسلة المختارة: ' + name + ' (الحد الأدنى ' + selectedChainMinWeight + ' جرام)';
+    document.getElementById('selectedChainName').style.display = 'block';
     calcOrder();
     document.getElementById('order').scrollIntoView({behavior:'smooth', block:'start'});
   }
@@ -532,6 +611,12 @@
   wantChain.addEventListener('change', ()=>{
     chainWeightBlock.style.display = wantChain.checked ? 'block' : 'none';
     chainLine.style.display = wantChain.checked ? 'flex' : 'none';
+    if(!wantChain.checked){
+      selectedChainName = null;
+      selectedChainMinWeight = 0;
+      chainWeightInput.min = 0.5;
+      document.getElementById('selectedChainName').style.display = 'none';
+    }
     calcOrder();
   });
   chainWeightInput.addEventListener('input', calcOrder);
@@ -610,6 +695,11 @@
       alert('لازم تكتبي اسمك ورقم موبايلك قبل تأكيد الطلب');
       return;
     }
+    if(wantChain.checked && selectedChainMinWeight && Number(chainWeightInput.value) < selectedChainMinWeight){
+      alert('السلسلة اللي اخترتيها (' + selectedChainName + ') الحد الأدنى لوزنها ' + selectedChainMinWeight + ' جرام، لازم تزودي الوزن قبل ما تأكدي الطلب');
+      chainWeightInput.focus();
+      return;
+    }
     const isWallet = optWallet.querySelector('input').checked;
     const receiptForThisMethod = isWallet ? walletReceiptData : codReceiptData;
     if(!receiptForThisMethod){
@@ -630,6 +720,7 @@
       engrave: document.getElementById('engraveName').value.trim(),
       weight: weightInput.value,
       chain: wantChain.checked ? chainWeightInput.value : null,
+      chain_name: wantChain.checked ? (selectedChainName || null) : null,
       total: document.getElementById('totalCost').textContent,
       pay: payLabel,
       notes: document.getElementById('notes').value.trim(),
@@ -647,7 +738,7 @@
     document.getElementById('submitBtn').disabled = false;
 
     let msg = `طلب رقم ${order.number}\nالاسم: ${order.name}\nالموبايل: ${order.phone}\nالتصميم: ${order.design}\nالوزن: ${order.weight} جرام`;
-    if(order.chain) msg += `\nسلسلة إضافية: ${order.chain} جرام`;
+    if(order.chain) msg += `\nسلسلة إضافية: ${order.chain_name ? order.chain_name + ' - ' : ''}${order.chain} جرام`;
     if(order.engrave) msg += `\nالنقش: ${order.engrave}`;
     msg += `\nالإجمالي: ${order.total}\nطريقة الدفع: ${order.pay}`;
     if(order.notes) msg += `\nملاحظات: ${order.notes}`;
