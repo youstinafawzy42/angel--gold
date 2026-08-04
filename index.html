@@ -511,7 +511,7 @@
           <div class="weight">الوزن التقريبي: ${d.weight} جرام</div>
           <button class="pick">عايز التصميم ده</button>
         `;
-        card.querySelector('.pick').addEventListener('click', ()=> selectDesign(d.name, d.weight));
+        card.querySelector('.pick').addEventListener('click', ()=> selectDesign(d.name, d.weight, d.image));
         grid.appendChild(card);
       });
     }
@@ -580,7 +580,7 @@
   initData();
 
   let designSelected = false;
-  function selectDesign(name, weight){
+  function selectDesign(name, weight, image){
     designSelected = true;
     document.getElementById('selectedDesignName').textContent = name;
     document.getElementById('mainWeightBlock').style.display = 'block';
@@ -646,23 +646,46 @@
   weightInput.addEventListener('input', calcOrder);
   calcOrder();
 
-  /* ===== رفع صور الإيصالات - محفوظة كـ data URL عشان تتخزن مع الطلب وتتشاف من لوحة التحكم ===== */
+  /* ===== رفع صور الإيصالات - بيتم ضغطها تلقائيًا (تصغير المقاس + جودة أقل) قبل التخزين، عشان صور الموبايل الكبيرة متبوظش إرسال الطلب ===== */
+  function compressImage(file, maxDim, quality){
+    return new Promise((resolve, reject)=>{
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = ()=>{ img.src = reader.result; };
+      reader.onerror = reject;
+      img.onload = ()=>{
+        let { width, height } = img;
+        if(width > maxDim || height > maxDim){
+          if(width > height){ height = Math.round(height * (maxDim / width)); width = maxDim; }
+          else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
   let walletReceiptData = null;
   let codReceiptData = null;
   function wireUpload(fileInputId, hintId, previewId, setter){
     const fileInput = document.getElementById(fileInputId);
-    fileInput.addEventListener('change', ()=>{
+    fileInput.addEventListener('change', async ()=>{
       const file = fileInput.files[0];
       if(!file) return;
-      const reader = new FileReader();
-      reader.onload = ()=>{
-        setter(reader.result);
+      try{
+        const compressed = await compressImage(file, 1200, 0.72);
+        setter(compressed);
         const preview = document.getElementById(previewId);
-        preview.src = reader.result;
+        preview.src = compressed;
         preview.style.display = 'block';
         document.getElementById(hintId).style.display = 'none';
-      };
-      reader.readAsDataURL(file);
+      }catch(e){
+        console.error('تعذر ضغط الصورة', e);
+        alert('حصلت مشكلة في معالجة الصورة، جربي صورة تانية');
+      }
     });
   }
   wireUpload('walletReceiptFile','walletUploadHint','walletReceiptPreview', v=>walletReceiptData=v);
