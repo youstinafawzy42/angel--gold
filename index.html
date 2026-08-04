@@ -108,11 +108,11 @@
   .pay-opt{border:1px solid #4a4330;border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;}
   .pay-opt.active{border-color:var(--gold);background:#2a2210;}
   .pay-opt input{width:auto;}
-  .notice{border-radius:10px;padding:12px 14px;font-size:13px;margin-top:10px;display:none;}
+  .notice{border-radius:10px;padding:12px 14px;font-size:13px;margin-top:10px;display:none;font-weight:600;line-height:1.6;}
   .notice.show{display:block;}
-  .notice.ok{background:#eaf3e9;color:var(--ok);border:1px solid #bcdcbd;}
-  .notice.warn{background:#faece7;color:#994;border:1px solid #e8c9a0;}
-  .notice.danger{background:#fdecec;color:var(--danger);border:1px solid #f0bcbc;}
+  .notice.ok{background:#123420;color:#7fe89a;border:1px solid #2a6b42;}
+  .notice.warn{background:#3a2a10;color:#e8c26a;border:1px solid #6b4f1f;}
+  .notice.danger{background:#3a1414;color:#ff8a80;border:1px solid #7a2b2b;}
   .upload{border:1.5px dashed var(--gold-dim);border-radius:10px;padding:20px;text-align:center;color:var(--text-soft);font-size:13px;margin-top:8px;}
   .submit-btn{width:100%;margin-top:24px;padding:15px;border:none;border-radius:12px;background:linear-gradient(180deg,var(--gold-light),var(--gold));color:#1a1405;font-family:'Cairo',sans-serif;font-weight:700;font-size:16px;cursor:pointer;}
   .success{display:none;text-align:center;padding:30px 10px;}
@@ -301,19 +301,27 @@
       </div>
 
       <div class="card">
-        <label style="margin-top:0">طريقة الدفع</label>
+        <label style="margin-top:0">اختر المحافظة</label>
+        <select id="governorate">
+          <option value="cairo">القاهرة</option>
+          <option value="giza">الجيزة</option>
+          <option value="other">محافظة تانية</option>
+        </select>
+
+        <label style="margin-top:16px;">طريقة الدفع</label>
         <div class="pay-options">
           <label class="pay-opt" id="optWallet"><input type="radio" name="pay" value="wallet"> إنستاباي</label>
           <label class="pay-opt" id="optCod"><input type="radio" name="pay" value="cod" checked> الدفع عند الاستلام</label>
         </div>
 
         <div id="walletBlock" style="display:none;">
-          <div class="notice warn show">هيتم دفع المبلغ بالكامل عن طريق إنستاباي، ومفيش عربون في الدفع الإلكتروني.</div>
+          <div class="notice ok show" id="walletNoticeDeposit">القاهرة والجيزة: هيتم دفع عربون 1000 جنيه بس عن طريق إنستاباي لتأكيد الطلب، والباقي عند الاستلام.</div>
+          <div class="notice danger" id="walletNoticeFull">خارج القاهرة والجيزة، لازم دفع كامل المبلغ عن طريق إنستاباي مقدمًا، ومفيش عربون.</div>
           <div class="calc-box" style="margin-top:14px;">
             <div class="calc-line"><span>حوّلي على رقم إنستاباي</span><b>01227715468</b></div>
             <div class="calc-line"><span>باسم</span><b>Mariem E</b></div>
           </div>
-          <label>ارفع صورة إيصال التحويل <span style="color:var(--gold-dim);font-weight:400;">(إجباري لتأكيد الطلب)</span></label>
+          <label id="walletUploadLabel">ارفع صورة إيصال التحويل <span style="color:var(--gold-dim);font-weight:400;">(إجباري لتأكيد الطلب)</span></label>
           <div class="upload" id="walletUploadZone" style="position:relative;">
             <span id="walletUploadHint">اسحب الصورة هنا أو دوس للرفع</span>
             <img id="walletReceiptPreview" style="display:none;max-width:100%;max-height:120px;border-radius:8px;margin-top:8px;">
@@ -322,13 +330,7 @@
         </div>
 
         <div id="codBlock">
-          <label>اختر المحافظة</label>
-          <select id="governorate">
-            <option value="cairo">القاهرة</option>
-            <option value="giza">الجيزة</option>
-            <option value="other">محافظة تانية</option>
-          </select>
-          <div class="notice ok show" id="codNoticeOk">القاهرة والجيزة: هيتم دفع عربون بس لتأكيد الطلب، والباقي عند الاستلام.</div>
+          <div class="notice ok show" id="codNoticeOk">القاهرة والجيزة: هيتم دفع عربون 1000 جنيه بس لتأكيد الطلب، والباقي عند الاستلام.</div>
           <div class="notice danger" id="codNoticeFull">خارج القاهرة والجيزة، لازم دفع كامل المبلغ مقدمًا، ومفيش عربون.</div>
           <label id="codUploadLabel">ارفع صورة إيصال العربون <span style="color:var(--gold-dim);font-weight:400;">(إجباري لتأكيد الطلب)</span></label>
           <div class="upload" id="codUploadZone" style="position:relative;">
@@ -614,6 +616,11 @@
   const chainLine = document.getElementById('chainLine');
 
   wantChain.addEventListener('change', ()=>{
+    if(wantChain.checked && !selectedChainName){
+      // متختارتش سلسلة بعد - نرجعها لجزئية السلاسل تختار منها بدل ما تكتب وزن على مزاجها
+      document.getElementById('chains').scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
     chainWeightBlock.style.display = wantChain.checked ? 'block' : 'none';
     chainLine.style.display = wantChain.checked ? 'flex' : 'none';
     if(!wantChain.checked){
@@ -681,11 +688,17 @@
   const codOk = document.getElementById('codNoticeOk');
   const codFull = document.getElementById('codNoticeFull');
   const codUploadLabel = document.getElementById('codUploadLabel');
+  const walletOk = document.getElementById('walletNoticeDeposit');
+  const walletFull = document.getElementById('walletNoticeFull');
+  const walletUploadLabel = document.getElementById('walletUploadLabel');
   function toggleGov(){
     const inCairoGiza = gov.value === 'cairo' || gov.value === 'giza';
     codOk.classList.toggle('show', inCairoGiza);
     codFull.classList.toggle('show', !inCairoGiza);
-    codUploadLabel.innerHTML = (inCairoGiza ? 'ارفع صورة إيصال العربون' : 'ارفع صورة إيصال المبلغ كامل') + ' <span style="color:var(--gold-dim);font-weight:400;">(إجباري لتأكيد الطلب)</span>';
+    codUploadLabel.innerHTML = (inCairoGiza ? 'ارفع صورة إيصال العربون (1000 جنيه)' : 'ارفع صورة إيصال المبلغ كامل') + ' <span style="color:var(--gold-dim);font-weight:400;">(إجباري لتأكيد الطلب)</span>';
+    walletOk.classList.toggle('show', inCairoGiza);
+    walletFull.classList.toggle('show', !inCairoGiza);
+    walletUploadLabel.innerHTML = (inCairoGiza ? 'ارفع صورة تحويل العربون (1000 جنيه)' : 'ارفع صورة تحويل المبلغ كامل') + ' <span style="color:var(--gold-dim);font-weight:400;">(إجباري لتأكيد الطلب)</span>';
   }
   gov.addEventListener('change', toggleGov);
   toggleGov();
@@ -698,7 +711,7 @@
       alert('لازم تكتبي اسمك ورقم موبايلك قبل تأكيد الطلب');
       return;
     }
-    if(!designSelected && !wantChain.checked){
+    if(!designSelected && !(wantChain.checked && selectedChainName)){
       alert('لازم تختاري كوليه (تصميم) أو سلسلة على الأقل من فوق قبل ما تأكدي الطلب');
       document.getElementById('designs').scrollIntoView({behavior:'smooth', block:'start'});
       return;
@@ -727,8 +740,8 @@
       design: designSelected ? document.getElementById('selectedDesignName').textContent : 'من غير كوليه/تصميم - سلسلة بس',
       engrave: document.getElementById('engraveName').value.trim(),
       weight: weightInput.value,
-      chain: wantChain.checked ? chainWeightInput.value : null,
-      chain_name: wantChain.checked ? (selectedChainName || null) : null,
+      chain: (wantChain.checked && selectedChainName) ? chainWeightInput.value : null,
+      chain_name: (wantChain.checked && selectedChainName) ? selectedChainName : null,
       total: document.getElementById('totalCost').textContent,
       pay: payLabel,
       notes: document.getElementById('notes').value.trim(),
@@ -738,10 +751,17 @@
     try{
       await supaInsert('/orders', order);
     }catch(e){
-      console.error('تعذر إرسال الطلب لـ Supabase', e);
-      alert('حصلت مشكلة في إرسال الطلب، حاولي تاني أو كلمينا على واتساب مباشرة');
-      document.getElementById('submitBtn').disabled = false;
-      return;
+      console.error('تعذر إرسال الطلب بكل الحقول، هنجرب تاني من غير حقل اسم السلسلة', e);
+      try{
+        const orderFallback = { ...order };
+        delete orderFallback.chain_name;
+        await supaInsert('/orders', orderFallback);
+      }catch(e2){
+        console.error('تعذر إرسال الطلب لـ Supabase نهائيًا', e2);
+        alert('حصلت مشكلة في إرسال الطلب، حاولي تاني أو كلمينا على واتساب مباشرة');
+        document.getElementById('submitBtn').disabled = false;
+        return;
+      }
     }
     document.getElementById('submitBtn').disabled = false;
 
