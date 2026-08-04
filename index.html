@@ -429,12 +429,15 @@
       method: 'POST',
       headers: {
         apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json', Prefer: 'return=representation'
+        // return=minimal مهم هنا: مفيش صلاحية قراءة (SELECT) عامة على جدول orders عن قصد،
+        // فلو طلبنا إرجاع الصف بعد الإضافة (return=representation) بيرفض العملية بخطأ RLS
+        // حتى لو الإضافة نفسها كانت هتنجح - إحنا أصلاً مش محتاجين الصف يرجع تاني.
+        'Content-Type': 'application/json', Prefer: 'return=minimal'
       },
       body: JSON.stringify(record)
     });
     if(!res.ok) throw new Error(await res.text());
-    return res.json();
+    return true;
   }
 
   /* ===== مصدر واحد للأسعار والمصنعية، مستخدم في السعر اللحظي وصفحة الطلب والشات بوت مع بعض =====
