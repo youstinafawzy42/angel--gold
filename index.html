@@ -846,8 +846,13 @@
     body.appendChild(formBubble);
     body.scrollTop = body.scrollHeight;
 
-    document.getElementById('chatCalcBtn').addEventListener('click', ()=>{
-      const weight = Number(document.getElementById('chatWeight').value) || 0;
+    // بنستخدم formBubble.querySelector بدل document.getElementById، عشان لو العميل سأل عن السعر
+    // أكتر من مرة، هيبقى فيه أكتر من عنصر بنفس الـ id في الصفحة، و getElementById بيرجع أول واحد بس
+    // (اللي ممكن يكون قديم)، فكان أحيانًا بيرد على الفقاعة القديمة أو مش بيرد خالص.
+    const weightInput = formBubble.querySelector('#chatWeight');
+    const calcBtn = formBubble.querySelector('#chatCalcBtn');
+    calcBtn.addEventListener('click', ()=>{
+      const weight = Number(weightInput.value) || 0;
       const r = calcTotal(PRODUCT_KARAT, weight);
       const answer = document.createElement('div');
       answer.className='chat-bubble';
